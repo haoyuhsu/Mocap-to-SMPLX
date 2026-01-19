@@ -4,7 +4,7 @@ L2=lambda x:torch.sum(x**2)
 L1=lambda x:torch.sum(torch.abs(x))
 Gmof=lambda x:torch.sum(gmof(x**2,0.04))
 
-from utils.mapping import OPTITRACK_BODY,OPTITRACK_HAND
+from utils.mapping import AMASS_BODY
 
 def gmof(squared_res, sigma_squared):
     """
@@ -59,9 +59,10 @@ def Loss_k3d(kp3ds,out_kp3ds,part='body',norm='l2'):
         raise NotImplementedError
     
     if part=='body':
-        diff_square=(kp3ds[:,OPTITRACK_BODY,:3]-out_kp3ds[:,OPTITRACK_BODY,:3])*kp3ds[:,OPTITRACK_BODY,3][...,None]
+        diff_square=(kp3ds[:,AMASS_BODY,:3]-out_kp3ds[:,AMASS_BODY,:3])*kp3ds[:,AMASS_BODY,3][...,None]
     elif part=='hand':
-        diff_square=(kp3ds[:,OPTITRACK_HAND,:3]-out_kp3ds[:,OPTITRACK_HAND,:3])*kp3ds[:,OPTITRACK_HAND,3][...,None]
+        # diff_square=(kp3ds[:,OPTITRACK_HAND,:3]-out_kp3ds[:,OPTITRACK_HAND,:3])*kp3ds[:,OPTITRACK_HAND,3][...,None]
+        pass
     elif part=='face':
         diff_square=(kp3ds[:,25+42:,:3]-out_kp3ds[:,25+42:,:3])*kp3ds[:,25+42:,3][...,None]
     
@@ -70,9 +71,10 @@ def Loss_k3d(kp3ds,out_kp3ds,part='body',norm='l2'):
 def Loss_smooth_body(out_kp3ds,part='body'):
     nf=out_kp3ds.shape[0]
     if part=='body':
-        kp3ds_est=out_kp3ds[:,OPTITRACK_BODY]
+        kp3ds_est=out_kp3ds[:,AMASS_BODY]
     elif part=='hand':
-        kp3ds_est=out_kp3ds[:,OPTITRACK_HAND]
+        # kp3ds_est=out_kp3ds[:,OPTITRACK_HAND]
+        pass
 
     kp3ds_interp=kp3ds_est.clone().detach()
     kp3ds_interp[1:-1]=(kp3ds_interp[:-2]+kp3ds_interp[2:])/2

@@ -1,3 +1,9 @@
-__pycache__/
+*__pycache__/
 /body_models/
 imgui.ini
+
+# some temporary files and folders
+_tmp_gt_lingo_smpl_from_smplx/
+test_data_mobileposer/
+test_data_ours/
+test_data_ours_20251118_old/

@@ -7,7 +7,7 @@ OPTIMIZE_RT={
     'k3d':1.0,
     'smooth_body':5e-1,
     'smooth_pose':1e-1,
-    'reg_pose':1e-2
+    'reg_pose':1e-2,
 }
 
 OPTIMIZE_POSES={
@@ -25,7 +25,6 @@ OPTIMIZE_HAND={
     'reg_pose':1e-2,
     'k3d_hand':10, # 10
     'reg_hand':1e-4
-
 }
 
 OPTIMIZE_EXPR={
