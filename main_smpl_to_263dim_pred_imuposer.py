@@ -52,18 +52,18 @@ class SMPLTo263Pipeline:
         
         Args:
             smpl_params: Dictionary with SMPL parameters
-                - 'global_orient': (nf, 3) - global orientation (axis-angle)
-                - 'body_pose': (nf, 23, 3) or (nf, 69) - body pose (axis-angle)
+                - 'global_orient'/'orient': (nf, 3) - global orientation (axis-angle)
+                - 'body_pose'/'pose': (nf, 23, 3) or (nf, 69) - body pose (axis-angle)
                 - 'transl': (nf, 3) - global translation
                 - 'betas': (nf, 10) or (10,) - shape parameters
         
         Returns:
             joints: Joint positions (nf, 22, 3)
-        """
-        global_orient = smpl_params['orient']  # (nf, 3)
-        body_pose = smpl_params['pose']        # (nf, 23, 3)
-        transl = smpl_params['transl']         # (nf, 3)
-        betas = smpl_params['betas']           # (nf, 10) or (10,)
+        """        
+        global_orient = smpl_params['global_orient']  # (nf, 3)
+        body_pose = smpl_params['body_pose']        # (nf, 23, 3)
+        transl = smpl_params['transl']           # (nf, 3)
+        betas = smpl_params['betas']             # (nf, 10) or (10,)
         
         nf = global_orient.shape[0]
         
@@ -136,18 +136,22 @@ def load_imuposer_predictions(pred_dir):
         pred_dir: Path to directory containing prediction pickle files
     
     Returns:
-        List of dictionaries containing predictions and ground truth
+        Tuple of (predictions, filenames):
+            - predictions: List of dictionaries containing predictions and ground truth
+            - filenames: List of original filenames (stems without extension)
     """
     pred_dir = Path(pred_dir)
-    pkl_files = sorted(list(pred_dir.glob('sample_*.pkl')))
+    pkl_files = sorted(list(pred_dir.glob('*.pkl')))
     
     predictions = []
+    filenames = []
     for pkl_file in pkl_files:
         with open(pkl_file, 'rb') as f:
             data = pickle.load(f)
         predictions.append(data)
+        filenames.append(pkl_file.stem)
     
-    return predictions
+    return predictions, filenames
 
 
 def main():
@@ -187,7 +191,7 @@ def main():
     )
     
     print(f"Loading predictions from {args.data_dir}...")
-    predictions = load_imuposer_predictions(args.data_dir)
+    predictions, filenames = load_imuposer_predictions(args.data_dir)
     
     # Create output directory
     out_dir = Path(args.out_dir)
@@ -195,14 +199,29 @@ def main():
     
     print(f"Converting {len(predictions)} sequences to 263D representation...")
     
-    for idx, pred_data in enumerate(tqdm(predictions, desc="Converting")):
-        pred_smpl = pred_data['pred']
+    for pred_data, filename in tqdm(zip(predictions, filenames), desc="Converting", total=len(predictions)):
+
+        pred_smpl = pred_data['pred'] if 'pred' in pred_data else pred_data['recon']  # Use 'pred' if available, otherwise 'recon'
+        
+        # Handle different key names (different datasets use different names)
+        orient_key = 'global_orient' if 'global_orient' in pred_smpl else 'orient'
+        pose_key = 'body_pose' if 'body_pose' in pred_smpl else 'pose'
+        
+        nf = pred_smpl[orient_key].shape[0]
+        
+        # Normalize keys for pipeline
+        pred_smpl_normalized = {
+            'global_orient': pred_smpl[orient_key],
+            'body_pose': pred_smpl[pose_key],
+            'transl': pred_smpl['transl'],
+            'betas': pred_smpl.get('betas', np.zeros((nf, 10), dtype=np.float32))
+        }
         
         # Convert predictions to 263D
-        pred_motion_263 = pipeline.convert(pred_smpl)
+        pred_motion_263 = pipeline.convert(pred_smpl_normalized)
         
-        # Save results
-        output_file = out_dir / f"sample_{idx:05d}.npy"        
+        # Save results with original filename
+        output_file = out_dir / f"{filename}.npy"        
         with open(output_file, 'wb') as f:
             np.save(f, pred_motion_263)
     
