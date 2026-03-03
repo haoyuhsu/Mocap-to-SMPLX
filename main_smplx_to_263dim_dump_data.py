@@ -18,7 +18,8 @@ from functools import partial
 
 # Import from convert_from_85_to_263.py
 import sys
-sys.path.append('/projects/benk/hhsu2/imu-humans/related_works/Mocap-to-SMPLX/HumanML3D')
+# sys.path.append('/projects/benk/hhsu2/imu-humans/related_works/Mocap-to-SMPLX/HumanML3D')
+sys.path.append('/projects/illinois/eng/cs/shenlong/personals/haoyu/imu-humans/Mocap-to-SMPLX/HumanML3D')
 from convert_from_85_to_263 import MotionConverter
 
 
@@ -220,8 +221,10 @@ if __name__ == "__main__":
 
 
     # Get SMPL and SMPL-X models and attributes
-    smplx_model_path = '/projects/benk/hhsu2/imu-humans/body_models/human_model_files/smplx/SMPLX_NEUTRAL.npz'
-    smpl_model_path = '/projects/benk/hhsu2/imu-humans/body_models/human_model_files/smpl/SMPL_NEUTRAL.pkl'
+    # smplx_model_path = '/projects/benk/hhsu2/imu-humans/body_models/human_model_files/smplx/SMPLX_NEUTRAL.npz'
+    # smpl_model_path = '/projects/benk/hhsu2/imu-humans/body_models/human_model_files/smpl/SMPL_NEUTRAL.pkl'
+    smplx_model_path = '/projects/illinois/eng/cs/shenlong/personals/haoyu/imu-humans/body_models/human_model_files/smplx/SMPLX_NEUTRAL.npz'
+    smpl_model_path = '/projects/illinois/eng/cs/shenlong/personals/haoyu/imu-humans/body_models/human_model_files/smpl/SMPL_NEUTRAL.pkl'
 
     smplx_model = BodyModel(
         bm_fname=smplx_model_path,
@@ -239,7 +242,8 @@ if __name__ == "__main__":
     rest_pelvis_smpl = default_smpl_output.joints[0, 0].detach().cpu().numpy()
 
     # Initialize pipeline
-    skeleton_path = '/projects/benk/hhsu2/imu-humans/related_works/Mocap-to-SMPLX/smpl_offsets_temp.npy'
+    # skeleton_path = '/projects/benk/hhsu2/imu-humans/related_works/Mocap-to-SMPLX/smpl_offsets_temp.npy'
+    skeleton_path = '/projects/illinois/eng/cs/shenlong/personals/haoyu/imu-humans/Mocap-to-SMPLX/smpl_offsets_temp.npy'
     pipeline = SMPLXTo263Pipeline(
         smplx_model=smplx_model,
         smpl_model=smpl_model,
