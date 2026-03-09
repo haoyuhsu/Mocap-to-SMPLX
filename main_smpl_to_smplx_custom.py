@@ -356,7 +356,7 @@ def get_bodiffusion_res(args, pipeline):
 
 
     # # (Original: load GT SMPL-X files and filter by frame count)
-    # gt_f_list = sorted(glob.glob(os.path.join(args.gt_data_dir, '*.pkl')))
+    gt_f_list = sorted(glob.glob(os.path.join(args.gt_data_dir, '*.pkl')))
     # valid_gt_files = []
     # for gt_f in gt_f_list:
     #     gt_data = pickle.load(open(gt_f, 'rb'), encoding='latin1')
@@ -364,6 +364,8 @@ def get_bodiffusion_res(args, pipeline):
     #         valid_gt_files.append(gt_f)
     #
     # assert len(valid_gt_files) == len(result_f_list), f"Number of valid GT files ({len(valid_gt_files)}) does not match number of result files ({len(result_f_list)})"
+
+    assert len(gt_f_list) == 1945, f"Expected 1945 GT files in {args.gt_data_dir}, but found {len(gt_f_list)}"
 
     for result_f_path in tqdm(result_f_list, desc="Converting sequences"):
         
@@ -383,25 +385,27 @@ def get_bodiffusion_res(args, pipeline):
         # Convert pred to SMPL-X
         pred_motion_263, pred_smplx_params = pipeline.convert(pred_smpl_params)
 
-        # # (Original: Load ground-truth SMPL-X directly from GT SMPL-X files)
-        # idx = int(name) - 1
-        # gt_f_path = valid_gt_files[idx]
-        # gt_motion_smpl85 = pickle.load(open(gt_f_path, 'rb'), encoding='latin1')['motion_data_smpl85'][:args.max_frames]
-        # gt_smplx_params = {
-        #     'global_orient': gt_motion_smpl85[:, :3],
-        #     'body_pose': gt_motion_smpl85[:, 3:72],
-        #     'transl': gt_motion_smpl85[:, 72:75],
-        #     'betas': np.zeros((gt_motion_smpl85.shape[0], 10), dtype=np.float32)
-        # }
-
-        # Convert ground-truth SMPL to SMPL-X
-        gt_smpl_params = {
-            'global_orient': gt_dict['global_orient'],
-            'body_pose': gt_dict['body_pose'],
-            'transl': gt_dict['transl'],
-            'betas': gt_dict['betas']
+        # (Original: Load ground-truth SMPL-X directly from GT SMPL-X files)
+        idx = int(name) - 1
+        gt_f_path = gt_f_list[idx]
+        gt_motion_smpl85 = pickle.load(open(gt_f_path, 'rb'), encoding='latin1')['motion_data_smpl85']
+        if args.max_frames is not None and gt_motion_smpl85.shape[0] > args.max_frames:
+            gt_motion_smpl85 = gt_motion_smpl85[:args.max_frames]
+        gt_smplx_params = {
+            'global_orient': gt_motion_smpl85[:, :3],
+            'body_pose': gt_motion_smpl85[:, 3:72],
+            'transl': gt_motion_smpl85[:, 72:75],
+            'betas': np.zeros((gt_motion_smpl85.shape[0], 10), dtype=np.float32)
         }
-        gt_motion_263, gt_smplx_params = pipeline.convert(gt_smpl_params)
+
+        # # Convert ground-truth SMPL to SMPL-X
+        # gt_smpl_params = {
+        #     'global_orient': gt_dict['global_orient'],
+        #     'body_pose': gt_dict['body_pose'],
+        #     'transl': gt_dict['transl'],
+        #     'betas': gt_dict['betas']
+        # }
+        # gt_motion_263, gt_smplx_params = pipeline.convert(gt_smpl_params)
 
         # Save results in format similar to get_motion_metric_smpl.py
         output_file = Path(args.out_dir) / f"{name}.pkl"
@@ -457,7 +461,9 @@ def get_mobileposer_res(args, pipeline):
 
         # # (Original: Load ground-truth SMPL-X directly from GT SMPL-X files)
         # gt_f_path = os.path.join(args.gt_data_dir, f"{name}.pkl")
-        # gt_motion_smpl85 = pickle.load(open(gt_f_path, 'rb'), encoding='latin1')['motion_data_smpl85'][:args.max_frames]
+        # gt_motion_smpl85 = pickle.load(open(gt_f_path, 'rb'), encoding='latin1')['motion_data_smpl85']
+        # if args.max_frames is not None and gt_motion_smpl85.shape[0] > args.max_frames:
+        #     gt_motion_smpl85 = gt_motion_smpl85[:args.max_frames]
         # gt_smplx_params = {
         #     'global_orient': gt_motion_smpl85[:, :3],
         #     'body_pose': gt_motion_smpl85[:, 3:72],
@@ -539,7 +545,9 @@ def get_imuposer_res(args, pipeline):
         # # (Original: Load ground-truth SMPL-X directly from GT SMPL-X files)
         # gt_f_name = gt_f_list[int(name.split('_')[1])]
         # gt_f_path = os.path.join(args.gt_data_dir, f"{gt_f_name}")
-        # gt_motion_smpl85 = pickle.load(open(gt_f_path, 'rb'), encoding='latin1')['motion_data_smpl85'][:args.max_frames]
+        # gt_motion_smpl85 = pickle.load(open(gt_f_path, 'rb'), encoding='latin1')['motion_data_smpl85']
+        # if args.max_frames is not None and gt_motion_smpl85.shape[0] > args.max_frames:
+        #     gt_motion_smpl85 = gt_motion_smpl85[:args.max_frames]
         # gt_smplx_params = {
         #     'global_orient': gt_motion_smpl85[:, :3],
         #     'body_pose': gt_motion_smpl85[:, 3:72],
@@ -589,7 +597,7 @@ if __name__ == "__main__":
                         help='Path to directory containing ground truth SMPL-X .pkl files (optional)')
     parser.add_argument('--out_dir', type=str, default='/home/haoyuyh3/Documents/maxhsu/imu-humans/_tmp_data/_pred_bodiffusion/lingo/smplx',
                        help='Output directory for converted results')
-    parser.add_argument('--max_frames', type=int, default=60,
+    parser.add_argument('--max_frames', type=int, default=None,
                        help='Maximum number of frames to convert (for speedup)')
     parser.add_argument('--mode', type=str, default='bodiffusion', choices=['bodiffusion', 'mobileposer', 'imuposer'],
                        help='Conversion mode to determine which GT files to load')
